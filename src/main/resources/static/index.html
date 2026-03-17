@@ -935,26 +935,72 @@
         }
 
         container.innerHTML = list.map(b => {
-            const pct = Math.min(b.usagePercent, 100);
-            const cls = b.exceeded ? 'exceeded'
-                : b.usagePercent > 80 ? 'warning'
-                    : 'ok';
+            const pct  = Math.min(b.usagePercent, 100);
+            const cls  = b.exceeded ? 'exceeded'
+                : b.usagePercent > 80 ? 'warning' : 'ok';
             const icon = b.exceeded ? '🚨' : b.usagePercent > 80 ? '⚠️' : '✅';
 
             return `
       <div class="budget-item">
         <div class="budget-top">
           <span class="budget-name">${b.categoryName}</span>
-          <span class="budget-amounts">
-            ${icon} ₹${fmt(b.spent)} / ₹${fmt(b.limit)}
-            (${b.usagePercent}%)
-          </span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="budget-amounts">
+              ${icon} ₹${fmt(b.spent)} / ₹${fmt(b.limit)}
+              (${b.usagePercent}%)
+            </span>
+            <button class="btn btn-secondary btn-sm"
+                    onclick="editBudget(${b.id}, '${b.categoryName}', ${b.limit})">
+              ✏️ Edit
+            </button>
+            <button class="btn btn-danger btn-sm"
+                    onclick="deleteBudget(${b.id})">
+              ✕
+            </button>
+          </div>
         </div>
         <div class="progress-bar">
           <div class="progress-fill ${cls}" style="width:${pct}%"></div>
         </div>
       </div>`;
         }).join('');
+    }
+
+    function editBudget(id, categoryName, currentLimit) {
+        // Pre-fill the budget form with existing values for editing
+        const newLimit = prompt(
+            `Update monthly limit for ${categoryName} (current: ₹${currentLimit}):`,
+            currentLimit
+        );
+        if (!newLimit || isNaN(newLimit) || parseFloat(newLimit) <= 0) return;
+
+        // Reuse the existing set endpoint — it updates if budget exists
+        // We need the categoryId so we fetch it from ALL_CATEGORIES
+        const category = ALL_CATEGORIES.find(c => c.name === categoryName);
+        if (!category) return;
+
+        api('/api/budgets', 'POST', {
+            categoryId:   category.id,
+            monthlyLimit: parseFloat(newLimit)
+        }).then(() => loadBudgetStatus());
+    }
+
+    async function deleteBudget(id) {
+        if (!confirm('Delete this budget?')) return;
+        try {
+            const res = await fetch('/api/budgets/' + id, {
+                method:  'DELETE',
+                headers: { 'Authorization': 'Bearer ' + TOKEN }
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                alert('Failed to delete: ' + (data.error || 'Unknown error'));
+                return;
+            }
+            loadBudgetStatus();
+        } catch (e) {
+            alert('Connection error while deleting.');
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════

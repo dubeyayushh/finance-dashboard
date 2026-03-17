@@ -11,6 +11,7 @@ import com.finance.repository.TransactionRepository;
 import com.finance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -75,6 +76,7 @@ public class BudgetService {
                     : 0.0;
 
             return BudgetStatus.builder()
+                    .id(b.getId())
                     .categoryName(b.getCategory().getName())
                     .limit(b.getMonthlyLimit())
                     .spent(spent)
@@ -85,6 +87,18 @@ public class BudgetService {
                     .build();
 
         }).collect(Collectors.toList());
+    }
+
+    // ── Delete Budget ─────────────────────────────────────────────────────
+    @Transactional
+    public void delete(Long id, String email) {
+        Budget budget = budgetRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Budget not found"));
+        // Security check — users can only delete their OWN budgets
+        if (!budget.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Access denied");
+        }
+        budgetRepository.delete(budget);
     }
 
     // ── Helper ────────────────────────────────────────────────────────────

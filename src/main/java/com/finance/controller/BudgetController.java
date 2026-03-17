@@ -43,4 +43,13 @@ public class BudgetController {
                 month == 0 ? now.getMonthValue() : month,
                 year  == 0 ? now.getYear()       : year));
     }
+
+    // DELETE /api/budgets/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        budgetService.delete(id, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
+    }
 }
