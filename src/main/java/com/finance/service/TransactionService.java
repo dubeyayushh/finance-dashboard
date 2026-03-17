@@ -10,6 +10,7 @@ import com.finance.repository.TransactionRepository;
 import com.finance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -61,6 +62,7 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void delete(Long id, String email) {
 
         Transaction transaction = transactionRepository.findById(id)

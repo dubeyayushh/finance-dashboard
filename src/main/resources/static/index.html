@@ -815,11 +815,20 @@
 
     async function deleteTransaction(id) {
         if (!confirm('Delete this transaction?')) return;
-        await fetch('/api/transactions/' + id, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + TOKEN }
-        });
-        loadAll();
+        try {
+            const res = await fetch('/api/transactions/' + id, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + TOKEN }
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                alert('Failed to delete: ' + (data.error || 'Unknown error'));
+                return;
+            }
+            loadAll();
+        } catch (e) {
+            alert('Connection error while deleting.');
+        }
     }
 
     function populateCategorySelects() {
